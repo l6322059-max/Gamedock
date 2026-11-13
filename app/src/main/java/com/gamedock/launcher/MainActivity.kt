@@ -248,11 +248,68 @@ private fun MiniStat(label: String, value: String, accent: Color, modifier: Modi
     }
 }
 
+private data class PerformanceSnapshot(
+    val freeRam: String,
+    val usedRam: String,
+    val batteryTemp: String,
+    val thermalStatus: String,
+    val cpuCores: String,
+    val chipset: String
+)
+
+private fun readPerformance(context: Context): PerformanceSnapshot {
+    val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val memory = ActivityManager.MemoryInfo()
+    manager.getMemoryInfo(memory)
+    val gb = 1024.0 * 1024.0 * 1024.0
+    val total = if (memory.totalMem > 0L) memory.totalMem else memory.availMem
+    val used = (total - memory.availMem).coerceAtLeast(0L)
+    val batteryIntent = context.registerReceiver(null, android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+    val tenthsC = batteryIntent?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, -1) ?: -1
+    val batteryTemp = if (tenthsC >= 0) String.format("%.1f°C", tenthsC / 10.0) else "Unavailable"
+    val thermal = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        val power = context.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+        when (power.currentThermalStatus) {
+            android.os.PowerManager.THERMAL_STATUS_NONE -> "Normal"
+            android.os.PowerManager.THERMAL_STATUS_LIGHT -> "Light"
+            android.os.PowerManager.THERMAL_STATUS_MODERATE -> "Moderate"
+            android.os.PowerManager.THERMAL_STATUS_SEVERE -> "Severe"
+            android.os.PowerManager.THERMAL_STATUS_CRITICAL -> "Critical"
+            android.os.PowerManager.THERMAL_STATUS_EMERGENCY -> "Emergency"
+            android.os.PowerManager.THERMAL_STATUS_SHUTDOWN -> "Shutdown"
+            else -> "Unknown"
+        }
+    } else "Not supported"
+    val chipset = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Build.SOC_MODEL.takeIf { it.isNotBlank() } ?: Build.HARDWARE else Build.HARDWARE
+    return PerformanceSnapshot(
+        freeRam = String.format("%.1f GB", memory.availMem / gb),
+        usedRam = String.format("%.1f GB", used / gb),
+        batteryTemp = batteryTemp,
+        thermalStatus = thermal,
+        cpuCores = Runtime.getRuntime().availableProcessors().toString(),
+        chipset = chipset.ifBlank { "Unavailable" }
+    )
+}
+
+private fun openGameModeSettings(context: Context) {
+    val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        Intent("android.settings.GAME_MODE_SETTINGS")
+    } else Intent(Settings.ACTION_SETTINGS)
+    runCatching {
+        if (intent.resolveActivity(context.packageManager) != null) {
+            context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } else {
+            context.startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        }
+    }.onFailure {
+        context.startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
+}
+
 @Composable
 private fun DashboardCard(gameCount: Int, favoriteCount: Int, accent: Color) {
     val context = LocalContext.current
-    val memory = remember { readMemory(context) }
-    val batteryTemp = remember { readBatteryTemperature(context) }
+    var stats by remember { mutableStateOf(readPerformance(context)) }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Your setup at a glance", color = Color.LightGray)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -260,19 +317,28 @@ private fun DashboardCard(gameCount: Int, favoriteCount: Int, accent: Color) {
             MiniStat("FAVORITES", favoriteCount.toString(), accent, Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            MiniStat("FREE RAM", memory, accent, Modifier.weight(1f))
-            MiniStat("BATTERY TEMP", batteryTemp, accent, Modifier.weight(1f))
+            MiniStat("FREE RAM", stats.freeRam, accent, Modifier.weight(1f))
+            MiniStat("USED RAM", stats.usedRam, accent, Modifier.weight(1f))
         }
-        InfoCard("Live FPS", "Not exposed to ordinary third-party apps on most Android devices. GameDock will not invent an FPS number.")
-        InfoCard("Performance status", "GameDock shows available device information and opens Android's own settings. It does not overclock your phone or change hidden CPU/GPU controls.")
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            MiniStat("BATTERY TEMP", stats.batteryTemp, accent, Modifier.weight(1f))
+            MiniStat("THERMAL STATUS", stats.thermalStatus, accent, Modifier.weight(1f))
+        }
+        InfoCard("Hardware", "Chipset: ${stats.chipset} • Available CPU cores: ${stats.cpuCores}")
+        OutlinedButton(onClick = { stats = readPerformance(context) }, modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Default.Refresh, null, tint = accent)
+            Spacer(Modifier.width(8.dp))
+            Text("Refresh performance information", color = Color.White)
+        }
+        InfoCard("Live FPS", "Android does not provide ordinary apps with a universal way to read another game's FPS. GameDock will not invent an FPS number.")
+        InfoCard("Game Mode", "Use Android's own Game Mode settings when your phone provides them. Available modes and controls depend on your manufacturer and Android version.")
     }
 }
 
 @Composable
 private fun TurboScreen(gameCount: Int, accent: Color, onOpenTools: () -> Unit) {
     val context = LocalContext.current
-    val memory = readMemory(context)
-    val temperature = readBatteryTemperature(context)
+    var stats by remember { mutableStateOf(readPerformance(context)) }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Box(Modifier.fillMaxWidth().background(
             Brush.linearGradient(listOf(Color(0xFF203D50), Color(0xFF1A2040), Panel)), RoundedCornerShape(22.dp)
@@ -290,11 +356,27 @@ private fun TurboScreen(gameCount: Int, accent: Color, onOpenTools: () -> Unit) 
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            MiniStat("FREE RAM", memory, accent, Modifier.weight(1f))
-            MiniStat("BATTERY TEMP", temperature, accent, Modifier.weight(1f))
+            MiniStat("FREE RAM", stats.freeRam, accent, Modifier.weight(1f))
+            MiniStat("USED RAM", stats.usedRam, accent, Modifier.weight(1f))
         }
-        InfoCard("Quick controls", "Display, sound, battery and Do Not Disturb settings are one tap away in the toolbox.")
-        InfoCard("FPS monitor", "Android does not offer a universal public API for reading another game's live FPS. This is shown as unavailable rather than a fake reading.")
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            MiniStat("BATTERY TEMP", stats.batteryTemp, accent, Modifier.weight(1f))
+            MiniStat("THERMAL STATUS", stats.thermalStatus, accent, Modifier.weight(1f))
+        }
+        InfoCard("Hardware", "Chipset: ${stats.chipset} • CPU cores: ${stats.cpuCores}")
+        OutlinedButton(onClick = { stats = readPerformance(context) }, modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Default.Refresh, null, tint = accent)
+            Spacer(Modifier.width(8.dp))
+            Text("Refresh device status", color = Color.White)
+        }
+        Button(onClick = { openGameModeSettings(context) }, modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = accent, contentColor = Ink)) {
+            Icon(Icons.Default.SportsEsports, null)
+            Spacer(Modifier.width(8.dp))
+            Text("Open Android Game Mode settings")
+        }
+        InfoCard("FPS monitor", "Live FPS for other games is not available to ordinary apps on most Android devices. GameDock reports this honestly instead of showing a fake counter.")
+        InfoCard("Performance controls", "GameDock reads public device status and opens supported Android settings. It cannot force CPU/GPU overclocking or bypass manufacturer thermal protections.")
         InfoCard("Game detection", "GameDock scans launcher-visible apps. Some games may need to be added manually in a future version.")
     }
 }
