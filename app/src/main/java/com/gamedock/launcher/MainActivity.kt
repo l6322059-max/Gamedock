@@ -3,6 +3,7 @@ package com.gamedock.launcher
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.widget.ImageView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -20,11 +21,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 
 private val Ink = Color(0xFF0B1020)
 private val Panel = Color(0xFF171F33)
@@ -195,9 +198,19 @@ private fun DashboardCard(gameCount: Int, favoriteCount: Int, accent: Color) {
 private fun GameRow(game: GameApp, favorite: Boolean, accent: Color, onFavorite: () -> Unit, onLaunch: () -> Unit) {
     Row(Modifier.fillMaxWidth().background(Panel, RoundedCornerShape(18.dp)).clickable(onClick = onLaunch).padding(14.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(44.dp).background(Color(0xFF26334B), RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
-            Icon(Icons.Default.SportsEsports, null, tint = accent)
-        }
+        val context = LocalContext.current
+        AndroidView(
+            factory = { viewContext ->
+                ImageView(viewContext).apply {
+                    scaleType = ImageView.ScaleType.CENTER_CROP
+                    setImageDrawable(runCatching {
+                        context.packageManager.getApplicationIcon(game.packageName)
+                    }.getOrNull())
+                }
+            },
+            modifier = Modifier.size(48.dp).clip(RoundedCornerShape(14.dp))
+                .background(Color(0xFF26334B))
+        )
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(game.label, color = Color.White, fontWeight = FontWeight.SemiBold)
