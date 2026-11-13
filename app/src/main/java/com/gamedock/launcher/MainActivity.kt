@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.os.BatteryManager
 import android.os.Bundle
+import android.os.Build
 import android.provider.Settings
 import android.widget.ImageView
 import androidx.activity.ComponentActivity
@@ -280,6 +281,15 @@ private fun GamingToolboxDialog(accent: Color, onDismiss: () -> Unit) {
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Quick access to Android controls", color = Color.LightGray, fontSize = 12.sp)
+                ToolButton("Enable floating bubble", Icons.Default.OpenInNew, accent) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
+                        context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    } else {
+                        val serviceIntent = Intent(context, FloatingToolboxService::class.java)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) context.startForegroundService(serviceIntent)
+                        else context.startService(serviceIntent)
+                    }
+                }
                 ToolButton("Display & brightness", Icons.Default.Brightness6, accent) {
                     openSystemSetting(context, Settings.ACTION_DISPLAY_SETTINGS)
                 }
@@ -295,7 +305,7 @@ private fun GamingToolboxDialog(accent: Color, onDismiss: () -> Unit) {
                 ToolButton("All Android settings", Icons.Default.Settings, accent) {
                     openSystemSetting(context, Settings.ACTION_SETTINGS)
                 }
-                Text("These shortcuts open Android settings; GameDock does not silently change protected system settings.", color = Color.LightGray, fontSize = 11.sp)
+                Text("Enable the bubble once, grant Display over other apps permission, then return to GameDock and tap Enable floating bubble again. The draggable bubble stays above games until you turn it off from its notification or panel.", color = Color.LightGray, fontSize = 11.sp)
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("Close", color = accent) } }
