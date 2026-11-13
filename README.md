@@ -1,16 +1,29 @@
 # GameDock
 
-A lightweight Android game launcher built with Kotlin and Jetpack Compose.
+A lightweight Android game launcher with a Game Turbo-inspired command center, built with Kotlin and Jetpack Compose.
 
-## Current features
+## Features
 
 - Scans launcher-visible apps and detects likely games using app names and package IDs.
 - Favorites saved locally on the device.
-- One-tap launch from the library.
-- Dashboard with detected-game and favorite counts.
-- Four selectable accent themes.
-- Dark gaming-focused interface.
+- One-tap game launching from the library.
+- Gaming dashboard with detected-game and favorite counts.
+- Device information: available RAM and battery temperature when Android reports it.
+- Game Turbo-inspired screen with a quick-access gaming toolbox.
+- Toolbox shortcuts to Android display/brightness, sound, battery/power, Do Not Disturb access, and general settings.
+- Four selectable accent themes and a dark gaming-focused interface.
 - GitHub Actions workflow builds a debug APK on every push to `main` or manual dispatch.
+
+## About the Turbo toolbox
+
+The toolbox is a floating-style in-app panel. Its shortcuts open Android's own settings pages, where the user can make system changes. It does not silently change protected settings, overclock the device, or claim to improve CPU/GPU performance.
+
+## Android limitations
+
+- Live FPS for another app is not exposed through a universal public Android API. GameDock reports this honestly instead of displaying made-up numbers.
+- Battery temperature and available RAM depend on what the device and Android version report.
+- A normal third-party app cannot reproduce Xiaomi's privileged Game Turbo controls, thermal policies, or OEM-level CPU/GPU tuning.
+- Game detection is heuristic and limited by Android package-visibility rules. It may miss games or include non-games.
 
 ## Build an APK
 
@@ -29,10 +42,3 @@ gradle assembleDebug
 ```
 
 APK output: `app/build/outputs/apk/debug/app-debug.apk`
-
-## Notes and limitations
-
-- Game detection is heuristic; it may miss games or include non-games. Android app visibility rules limit what any launcher can discover.
-- Favorites and theme selection are stored locally using app preferences.
-- Live FPS, device temperature, and per-game performance telemetry are not claimed as available. Android does not provide ordinary apps with a universal API for reading another app's live FPS.
-- This is an initial project foundation. The first GitHub Actions build still needs to run before an APK can be called verified.
