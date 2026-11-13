@@ -5,7 +5,7 @@ A lightweight Android game launcher with a Game Turbo-inspired command center an
 ## Features
 
 - Scans launcher-visible apps and detects likely games using app names and package IDs.
-- Favorites saved locally on the device and one-tap game launching.
+- Favorites saved locally on the device, one-tap game launching and instant library search by game name or package ID.
 - Gaming dashboard with detected-game counts, available RAM and battery temperature when Android reports it.
 - Game Turbo-inspired screen and draggable floating bubble that can stay above other apps and games.
 - Floating panel shortcuts to Android display/brightness, sound, battery/power and Do Not Disturb settings.
