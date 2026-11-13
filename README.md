@@ -6,8 +6,8 @@ A lightweight Android game launcher with a Game Turbo-inspired command center an
 
 - Scans launcher-visible apps and detects likely games using app names and package IDs.
 - Favorites saved locally on the device, one-tap game launching and instant library search by game name or package ID.
-- Gaming dashboard with detected-game counts, available RAM and battery temperature when Android reports it.
-- Game Turbo-inspired screen and draggable floating bubble that can stay above other apps and games.
+- Gaming dashboard with refreshable free/used RAM, battery temperature, Android thermal status, chipset and available CPU-core count.
+- Game Turbo-inspired screen with a shortcut to Android Game Mode settings on supported devices, plus a draggable floating bubble that can stay above other apps and games.
 - Floating panel shortcuts to Android display/brightness, sound, battery/power and Do Not Disturb settings.
 - Four selectable accent themes and a dark gaming-focused interface.
 - GitHub Actions workflow builds a debug APK on every push to `main` or manual dispatch.
@@ -26,7 +26,9 @@ Android and Xiaomi/HyperOS may show the permission page or background-service co
 ## Android limitations
 
 - The floating bubble requires the user to grant Android's special **Display over other apps** permission.
-- Live FPS for another app is not exposed through a universal public Android API. GameDock reports this honestly instead of displaying made-up numbers.
+- Live FPS for another app is not exposed through a universal public Android API. GameDock does not display fabricated FPS readings.
+- Thermal status, chipset name, battery temperature and memory values depend on Android version and device reporting; tap Refresh to request a new reading.
+- The Android Game Mode settings shortcut may fall back to general Settings if the manufacturer does not expose a Game Mode page.
 - Battery temperature and available RAM depend on what the device and Android version report.
 - A normal third-party app cannot reproduce Xiaomi's privileged Game Turbo thermal policies or OEM-level CPU/GPU tuning.
 - Game detection is heuristic and limited by Android package-visibility rules. It may miss games or include non-games.
