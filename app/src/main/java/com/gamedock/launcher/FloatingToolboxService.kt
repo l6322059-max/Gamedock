@@ -78,6 +78,8 @@ class FloatingToolboxService : Service() {
     }
 
     private fun showBubble() {
+        overlayView?.let { runCatching { windowManager.removeView(it) } }
+        expanded = false
         val bubble = TextView(this).apply {
             text = "GD ⚡"
             textSize = 15f
