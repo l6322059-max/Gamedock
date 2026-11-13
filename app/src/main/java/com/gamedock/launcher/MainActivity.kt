@@ -170,17 +170,51 @@ private fun GameLibrary(
     accent: Color,
     onFavorite: (GameApp) -> Unit
 ) {
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredGames = shownGames.filter {
+        it.label.contains(searchQuery, ignoreCase = true) ||
+            it.packageName.contains(searchQuery, ignoreCase = true)
+    }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         MiniStat("DETECTED", games.size.toString(), accent, Modifier.weight(1f))
         MiniStat("FAVORITES", favorites.size.toString(), accent, Modifier.weight(1f))
     }
-    Spacer(Modifier.height(18.dp))
-    if (shownGames.isEmpty()) {
+    Spacer(Modifier.height(14.dp))
+    OutlinedTextField(
+        value = searchQuery,
+        onValueChange = { searchQuery = it },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+        placeholder = { Text("Search games or packages…", color = Color.LightGray) },
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = accent) },
+        trailingIcon = {
+            if (searchQuery.isNotEmpty()) {
+                IconButton(onClick = { searchQuery = "" }) {
+                    Icon(Icons.Default.Close, contentDescription = "Clear search")
+                }
+            }
+        },
+        shape = RoundedCornerShape(16.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = accent,
+            unfocusedBorderColor = Color(0xFF39445C),
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.White,
+            cursorColor = accent
+        )
+    )
+    Spacer(Modifier.height(14.dp))
+    if (filteredGames.isEmpty()) {
         Box(Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
-            Text(if (favorites.isNotEmpty()) "No games found." else "No games here yet. Tap the star on a game to save it.", color = Color.LightGray)
+            Text(
+                if (searchQuery.isNotBlank()) "No games match “$searchQuery”."
+                else if (favorites.isNotEmpty()) "No games found."
+                else "No games here yet. Tap the star on a game to save it.",
+                color = Color.LightGray
+            )
         }
     } else LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(bottom = 84.dp)) {
-        items(shownGames, key = { it.packageName }) { game ->
+        items(filteredGames, key = { it.packageName }) { game ->
             GameRow(game, favorites.contains(game.packageName), accent, onFavorite = { onFavorite(game) })
         }
     }
