@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,8 +18,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -84,6 +87,10 @@ fun GameDockScreen() {
                 Text(when (selectedTab) { 1 -> "Your favorites"; 2 -> "Gaming dashboard"; 3 -> "Make it yours"; else -> "Game library" },
                     color = Color.White, fontSize = 29.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(16.dp))
+                if (selectedTab == 0) {
+                    HeroCard(accent)
+                    Spacer(Modifier.height(16.dp))
+                }
                 when (selectedTab) {
                     2 -> DashboardCard(games.size, favorites.size, accent)
                     3 -> {
@@ -130,6 +137,32 @@ fun GameDockScreen() {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun HeroCard(accent: Color) {
+    Row(
+        Modifier.fillMaxWidth()
+            .background(
+                Brush.linearGradient(listOf(Color(0xFF24204D), Color(0xFF102D43), Color(0xFF171F33))),
+                RoundedCornerShape(22.dp)
+            )
+            .padding(start = 18.dp, top = 14.dp, end = 10.dp, bottom = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text("READY PLAYER ONE", color = accent, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+            Spacer(Modifier.height(6.dp))
+            Text("Your games.\nOne launchpad.", color = Color.White, fontSize = 21.sp, fontWeight = FontWeight.Bold, lineHeight = 25.sp)
+            Spacer(Modifier.height(5.dp))
+            Text("Play more. Better.", color = Color.LightGray, fontSize = 12.sp)
+        }
+        Image(
+            painter = painterResource(R.drawable.gamedock_hero),
+            contentDescription = "Neon GameDock controller illustration",
+            modifier = Modifier.width(142.dp).height(100.dp)
+        )
     }
 }
 
