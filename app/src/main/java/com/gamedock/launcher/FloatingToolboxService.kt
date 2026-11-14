@@ -79,9 +79,11 @@ class FloatingToolboxService : Service() {
         }
     }
 
-    private fun overlayType() =
-        if (Build.VERSION.SDK_INT >= 26) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-        else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
+    @Suppress("DEPRECATION")
+    private fun overlayType(): Int {
+        return if (Build.VERSION.SDK_INT >= 26) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+        else WindowManager.LayoutParams.TYPE_PHONE
+    }
 
     private fun baseParams(width: Int = WindowManager.LayoutParams.WRAP_CONTENT): WindowManager.LayoutParams {
         return WindowManager.LayoutParams(
